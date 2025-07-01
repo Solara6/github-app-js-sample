@@ -13,7 +13,8 @@ const privateKeyPath = process.env.PRIVATE_KEY_PATH
 const privateKey = fs.readFileSync(privateKeyPath, 'utf8')
 const secret = process.env.WEBHOOK_SECRET
 const enterpriseHostname = process.env.ENTERPRISE_HOSTNAME
-const messageForNewPRs = fs.readFileSync('./message.md', 'utf8')
+const issueTitle = 'New Pull Request Opened'
+const issueBody = fs.readFileSync('./message.md', 'utf8')
 
 // Create an authenticated Octokit client authenticated as a GitHub App
 const app = new App({
@@ -39,11 +40,11 @@ app.octokit.log.debug(`Authenticated as '${data.name}'`)
 app.webhooks.on('pull_request.opened', async ({ octokit, payload }) => {
   console.log(`Received a pull request event for #${payload.pull_request.number}`)
   try {
-    await octokit.rest.issues.createComment({
+    await octokit.rest.issues.create({
       owner: payload.repository.owner.login,
       repo: payload.repository.name,
-      issue_number: payload.pull_request.number,
-      body: messageForNewPRs
+      title: issueTitle,
+      body: `PR #${payload.pull_request.number} opened: ${payload.pull_request.title}\n\n${issueBody}`
     })
   } catch (error) {
     if (error.response) {
